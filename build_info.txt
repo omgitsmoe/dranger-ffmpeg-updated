@@ -116,3 +116,24 @@ explanation:
 - replace /opt/.. with actual paths and combine with gcc statement for tut02.c
 
 gcc -o tutorial02 tut02.c -ISDL2-2.0.12/x86_64-w64-mingw32/include/SDL2 -LSDL2-2.0.12/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows -lavformat -lavcodec -lswscale -lswresample -lavutil -lz -lm
+
+---- VC: ffmpeg-5.1.2 + SDL2-2.24.1 ----
+
+either build ffmpeg yourself (or use the description for mingw above) or download the built versions
+from https://www.gyan.dev/ffmpeg/builds/ (linked to by the offical
+[ffmpeg website](https://ffmpeg.org/download.html#build-windows))
+
+download SDL2: https://github.com/libsdl-org/SDL/releases/tag/release-2.24.1
+-> SDL2-devel-2.24.1-VC.zip 
+
+in Visual Dev Console:
+(/I include directory for ffmpeg)
+(/link pass linker flags)
+(/libpath:... where to look for libs)
+rest = libs to link with
+cl tut01.c /I .\ffmpeg-5.1.2-full_build-shared\include\ /link /libpath:ffmpeg-5.1.2-full_build-shared\lib\ avcodec.lib avutil.lib avformat.lib swscale.lib
+
+add SDL2 for tut02+
+cl tut02.c /I .\ffmpeg-5.1.2-full_build-shared\include\ /I .\SDL2-2.24.1\include\ /link /libpath:ffmpeg-5.1.2-full_build-shared\lib\ avcodec.lib avutil.lib avformat.lib swscale.lib /libpath:SDL2-2.24.1\lib\x64\ SDL2.lib SDL2main.lib /SUBSYSTEM:CONSOLE
+
+tut03.c also needs swresample.lib

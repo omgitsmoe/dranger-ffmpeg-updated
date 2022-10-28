@@ -21,12 +21,15 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
+// prevent SDL from overriding main, but then we need to call SDL_SetMainReady() in our main
+// so everything can be initialized, or make sure we do it ourselves
+#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_thread.h>
 
-#ifdef __MINGW32__
-#undef main /* Prevents SDL from overriding main() */
-#endif
+// #ifdef __MINGW32__
+// #undef main /* Prevents SDL from overriding main() */
+// #endif
 
 #include <stdio.h>
 

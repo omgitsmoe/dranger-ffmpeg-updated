@@ -27,12 +27,15 @@
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 
+// prevent SDL from overriding main, but then we need to call SDL_SetMainReady() in our main
+// so everything can be initialized, or make sure we do it ourselves
+#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_thread.h>
 
-#ifdef __MINGW32__
-#undef main /* Prevents SDL from overriding main() */
-#endif
+// #ifdef __MINGW32__
+// #undef main /* Prevents SDL from overriding main() */
+// #endif
 
 #define SDL_AUDIO_BUFFER_SIZE 1024
 #define MAX_AUDIO_FRAME_SIZE 192000
@@ -392,7 +395,11 @@ int audio_decode_frame(AVCodecContext *aCodecCtx, uint8_t *audio_buf, int buf_si
     // ffmpeg explicitly states that AVPacket can be allocated on the stack
     // uinitialized value for packet.data was some sdl memory which was
     // then freed by packet_unref -> zero init
+#ifdef _WIN32
+    AVPacket packet = {0};
+#else
     AVPacket packet = {};
+#endif
     /* uint8_t *audio_pkt_data = NULL; */
     /* int audio_pkt_size = 0; */
     static AVFrame* frame = NULL;
@@ -564,7 +571,7 @@ int main(int argc, char *argv[])
     // e.g. AVFrame           *pFrame = NULL;
 
     if(argc < 2) {
-        fprintf(stderr, "Usage: tut02 <file>\n");
+        fprintf(stderr, "Usage: tut03 <file>\n");
         exit(1);
     }
 

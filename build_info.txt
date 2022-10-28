@@ -1,0 +1,118 @@
+command:
+gcc -o tutorial01 tut01.c -lavformat -lavcodec -lswscale -lswresample -lavutil -lz -lm
+
+
+building with completely static ffmpeg did not work since third party libraries were not properly
+embedded and thus needed to be supplied every time when building
+    gcc -o tutorial01 tut01.c -Iffmpeg-4.3.1/build/include -Lffmpeg-4.3.1/build/lib -lavformat -lavcodec -lswscale -lswresample -lavutil -lbcrypt -lz -lm -lwsock32 -lWs2_32 -liconv
+would need to supply 3rd party libs from build/lib/pkgconfig/*.pc Libs: ... to build with static libs
+reason for that is:
+    When a static library you use depends on shared libraries, you need to explicitly link your
+    final binary against those shared libraries. The reason for that is that a static library is
+    just a collection of object files, packed into an "ar" archive (that's what .a files are.) No
+    information is stored about shared library dependencies.
+
+    
+
+    > The target is, that only libmy.a should be required to build an executable
+
+    This is already an unconventional goal for static libraries.
+
+    Static libraries normally only contain the object code built from the source code for that
+    library. Users of that library must also link to the libraries that your library requires,
+    because the definitions have not been copied in to your library when it was built.
+
+    Tools like ar can be used to combine multiple static libraries together, since they are just
+    archives of object code. The tool can not predict which object code the end-user will use
+    though, so it will bundle entire libraries. Otherwise, the end user may be looking for a
+    definition that you left out and then need to link in a 2nd copy of the dependency lib anyways.
+
+    If you want to provide a library that has everything the end-user needs, cut down to what your
+    wrapper actually uses, you can build a shared library. Shared libraries are considered
+    executable, so the compiler knows that any unreferenced object code is not going to be used, and
+    it will not be included in the shared library.
+
+
+-Iinclude_dir add include directory
+-llibname links with a library file; order of these matters!
+[-Ldir] -L looks in directory for library files; still needs -llibname
+
+-lz zlib
+-lm math lib
+
+needs mingw-w64, best to install it and other dependencies using:
+msys2 https://msys2.github.io/
+
+update and sync packages with: pacman -Syyu
+
+Now install requisite packages:
+pacman -S make
+pacman -S diffutils
+pacman -S yasm
+pacman -S nasm
+pacman -S pkg-config
+pacman -S zlib
+
+install mingw-w64
+pacman -S mingw-w64-x86_64-gcc
+pacman -S mingw-w64-x86_64-openlibm
+(or install pre-built ffmpeg here: pacman -S mingw-w64-x86_64-ffmpeg)
+
+then run ./configure in ffmpeg source dir
+for building static libs (3rd party libs not properly linked in)
+./configure \
+--arch=x86_64 \
+--target-os=mingw64 \
+--prefix=/d/sync/coding/cpp_learn/ffmpeg_mp/ffmpeg-4.3.1/build \
+--pkg-config=pkg-config \
+--pkg-config-flags=--static \
+--extra-cflags=--static \
+--extra-ldflags=--static \
+--extra-libs="-static -lm -lz -fopenmp" \
+--enable-static \
+--disable-shared
+
+dynamic:
+./configure \
+--arch=x86_64 \
+--target-os=mingw64 \
+--prefix=/d/sync/coding/cpp_learn/ffmpeg_mp/ffmpeg-4.3.1/build \
+--pkg-config=pkg-config \
+--extra-libs="-lm -lz -fopenmp" \
+--enable-shared
+
+for debug (main part is disable-stripping):
+./configure \
+--arch=x86_64 \
+--target-os=mingw64 \
+--prefix=/d/sync/coding/cpp_learn/ffmpeg_mp/ffmpeg-4.3.1/build \
+--pkg-config=pkg-config \
+--extra-libs="-lm -lz -fopenmp" \
+--enable-debug=3 \
+--extra-cflags=-g --extra-cflags=-fno-omit-frame-pointer \
+--enable-shared --disable-static --disable-optimizations --disable-mmx --disable-stripping
+
+in gdb: use "set debug-file-directory <directory>" to use the debug dlls in that dir
+to test: show debug-file-directory
+for single files: add-symbol-file <filename>
+
+
+even when building shared libs the resulting exe still needs libbz2, zlib1 and libwinpthread1 that
+are obv. not built with ffmpeg
+
+explanation:
+    --cross-prefix=x86_64-w64-mingw32- \  when cross-compiling
+    --prefix=/usr/local \  INSTALL LOCATION
+
+
+---- TUT 02 ------
+
+- download dev binaries for sdl2
+- use sdl-config to print out the proper flags for gcc to include the SDL libraries properly
+- SDL2-2.0.12/x86_64-w64-mingw32/bin/sdl2-config --cflags --libs
+- output:
+    - -I/opt/local/x86_64-w64-mingw32/include/SDL2 -Dmain=SDL_main
+    - -L/opt/local/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
+- replace /opt/.. with actual paths and combine with gcc statement for tut02.c
+
+gcc -o tutorial02 tut02.c -ISDL2-2.0.12/x86_64-w64-mingw32/include/SDL2 -LSDL2-2.0.12/x86_64-w64-mingw32/lib -lmingw32 -lSDL2main -lSDL2 -mwindows -lavformat -lavcodec -lswscale -lswresample -lavutil -lz -lm
